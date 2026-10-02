@@ -1,0 +1,43 @@
+# Global rules (token-efficient stack)
+
+## Flow — code tasks
+1. Index: cbm `index_status` → unindexed? `index_repository` : `detect_changes`.
+2. Skill gate: invoke every matching skill FIRST. Stack rules: @rules/stacks.md
+3. Ambiguous → AskUserQuestion. No guessing.
+4. Explore via cbm: `get_architecture` → `search_graph` → `get_code_snippet` / `get_file_outline`.
+5. Changed symbol → cbm `trace_path` + update ALL call sites.
+6. TDD where tests exist. Verify: lint + typecheck + tests pass before "done".
+
+## Tool routing
+| Want | Use |
+|---|---|
+| find def / callers / flow | cbm `search_graph` / `trace_path` |
+| code text search | cbm `search_code` |
+| read known range | Read w/ offset+limit (≤200 lines) |
+| big output: tests, builds, logs, many cmds | `ctx_batch_execute` / `ctx_execute` / `ctx_execute_file` |
+| fetch URL / docs | `ctx_fetch_and_index` → `ctx_search` |
+| restore compressed output | `headroom_retrieve(hash)` |
+
+Hooks enforce: full Read / content Grep on source blocked until a cbm call (120s window). Shell `cat/head/tail/grep/rg/find/Get-Content/Select-String` as pipeline head blocked; filters after a pipe OK. Git etc. auto-rewritten through RTK. Huge repetitive shell output (>15K chars) may be folded by Headroom; error/warn/fail lines always kept verbatim, diffs/code never touched. Never infer folded lines — `headroom_retrieve(hash)` if needed. User saying "exact"/"full output" disables folding for that turn.
+Escapes: project `.claude/no-gates` file, or `~/.claude/tokenstack/unlock-{cbm|shell|all}-<session_id>` (this session, 10 min). Global `unlock-<gate>` (no session id) affects ALL sessions — only the user creates those. Never use escapes to dodge the stack without telling the user why.
+
+## Subagents
+Delegate: web research, refactor >2 files, multi-file summaries, audits, unknown-repo exploration, big log triage. Inline: single-file read/edit, one search.
+Prompts self-contained, <500 tok; ask for report <200 words. ≤3 parallel.
+Model routing (hook fills `model` if you omit it; pass it yourself when you know better):
+| Task | Model |
+|---|---|
+| audit, security, review, refactor, architecture, migration, root-cause, concurrency, edge cases, Plan agent | opus (floor — never lower) |
+| implement, fix, test, research, summarize, find/list/count | sonnet |
+| rename, reformat, typo — output trivially checkable | haiku |
+| hardest open-ended reasoning where opus already failed | fable (explicit only) |
+Escalate, don't patch: if a subagent result is uncertain, incomplete, or contradicts evidence on anything that matters, re-run the same task one tier up (router logs this and auto-promotes classes that escalate often). Verify haiku/sonnet counts and lists before relying on them.
+
+## Skills
+New/changed skills → run `skill-intake` before use (SessionStart hook lists pending).
+
+## Handoff
+PreCompact hook writes `~/.claude/handoffs/<cwd-slug>.md`; injected after compaction. Manual: `/handoff`.
+
+## Style
+Diagrams: Mermaid over prose. Code, commits, security notes, and user-facing docs: normal full prose.
