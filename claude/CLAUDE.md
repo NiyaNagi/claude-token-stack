@@ -32,9 +32,13 @@ Model routing (hook fills `model` if you omit it; pass it yourself when you know
 | rename, reformat, typo — output trivially checkable | haiku |
 | hardest open-ended reasoning where opus already failed | fable (explicit only) |
 Escalate, don't patch: if a subagent result is uncertain, incomplete, or contradicts evidence on anything that matters, re-run the same task one tier up (router logs this and auto-promotes classes that escalate often). Verify haiku/sonnet counts and lists before relying on them.
+"use antigravity / google / gemini" → `antigravity` skill (agy in WSL, background task, verify after).
 
 ## Skills
 New/changed skills → run `skill-intake` before use (SessionStart hook lists pending).
+
+## Never set
+Never add `DO_NOT_TRACK`, `DISABLE_TELEMETRY` or `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` to any settings `env`, shell profile or system environment. They turn off Claude Code feature flags and break Remote Control. To opt out of plugin telemetry, use that tool's own switch, e.g. `CAVEMAN_TELEMETRY=0` or `HEADROOM_BEACON=off`.
 
 ## Handoff
 PreCompact hook writes `~/.claude/handoffs/<cwd-slug>.md`; injected after compaction. Manual: `/handoff`.

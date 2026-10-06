@@ -16,7 +16,7 @@ Everything that can be tuned, where it lives, and the default.
 | `CAVEMAN_DEFAULT_MODE` | `lite` | `off`, `lite`, `full`, `ultra`, `wenyan-*`. Per-repo override: `.caveman/config.json` `{"defaultMode":"…"}`; user file: `%APPDATA%\caveman\config.json`. In-session: `/caveman lite|full|ultra|off`. |
 | `HEADROOM_BEACON` | `off` | Disable Headroom anonymous telemetry. |
 | `HEADROOM_CCR_TTL_SECONDS` | `21600` | How long compressed originals stay retrievable (6 h) in `~/.headroom/ccr_store.db`. |
-| `DO_NOT_TRACK` | `1` | Opt out of telemetry in tools that honor it (caveman CLI). |
+| `CAVEMAN_TELEMETRY` | `0` | Opt out of caveman plugin telemetry. Never use `DO_NOT_TRACK`, `DISABLE_TELEMETRY` or `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`: they disable Claude Code feature flags and break Remote Control. |
 | `TS_IGNORE_UNLOCK` | unset | Tests only: ignore escape-hatch files. |
 | `TS_DEBUG` | unset | Log tool_response shapes in the compress hook. (Or create `~/.claude/tokenstack/debug`.) |
 
@@ -119,3 +119,19 @@ Pricing basis (per 1M tokens, in/out): Fable 5.1 $10/$50 · Opus 5.5 $4/$20 · S
 - `effortLevel` in settings (`low`…`max`) is the biggest per-model cost/quality lever for the main model.
 - `/clear` between unrelated tasks; disable MCP servers/connectors you don't need in a session (each tool schema costs context).
 - `/handoff` writes a manual checkpoint any time.
+
+## Antigravity (optional)
+
+The `antigravity` section of `~/.claude/tokenstack/model-routing.json` controls delegation to agy. The runner writes the defaults on first use. Delete the section to regenerate them.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `distro` | `Ubuntu` | WSL distro that runs agy. |
+| `defaultTimeout` | `30m` | Per-job limit (`--print-timeout`; a hard `timeout` adds 60 s). Override per job with `--timeout`. |
+| `hardPattern` | regex (hard, complex, from scratch, redesign, …) | Task text that routes to the `hard` class (Opus). |
+| `route.<class>.<family>` | see docs/ANTIGRAVITY.md | Alias per router class (`hard`, `deep`, `build`, `research`, `mechanical`, `_default`) and family (`google`, `claude`, `any`). |
+| `aliases` | `flash`, `flash-lo`, `pro`, `opus`, `sonnet`, … | Glob over model ids. The newest version wins. |
+
+Environment: `AGR_MODELS_FILE` (tests only) replaces the live `agy models` list with a JSON fixture. Model list cache: `~/.claude/tokenstack/agy-models.json` (24 h; `agy-run.js models --refresh`). Jobs: `~/.claude/tokenstack/agy-jobs/`.
+
+Runner commands are listed in [ANTIGRAVITY.md](ANTIGRAVITY.md#runner-commands).

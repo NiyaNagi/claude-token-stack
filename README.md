@@ -125,16 +125,25 @@ claude/CLAUDE.md            global rules (installed as CLAUDE.tokenstack.md + @i
 claude/rules/stacks.md      per-stack skill gates (example rows)
 claude/skills/skill-intake/ skill that audits new/changed skills
 claude/commands/handoff.md  /handoff manual checkpoint
+claude/skills/antigravity/  optional: delegate tasks to Antigravity (agy) and verify the result
+hooks/tokenstack/agy-run.js optional: Antigravity runner (model routing, live progress, git snapshot)
+hooks/tokenstack/agy/       optional: WSL side of the runner
 tests/                      hooks / compression / router self-tests, benchmark, caveman A/B
 docs/SETUP.md               every install step, manual equivalents, verification, uninstall
 docs/CONFIGURATION.md       every option, threshold, file and escape hatch
 docs/TROUBLESHOOTING.md     problems hit during the build and their fixes
+docs/ANTIGRAVITY.md         Antigravity delegation: install, models, routing, verification, security
 ```
+
+## Optional: Antigravity delegation
+
+`.\install.ps1 -Antigravity` adds a skill that hands work to the Antigravity CLI (`agy`, running in WSL). Say "use antigravity", "use google", "have gemini pro review this" or "use antigravity with opus". Claude picks the model: Flash or Sonnet for bulk work, Pro or Opus for reasoning and reviews, and Opus for hard tasks, unless you name one. It runs the job as a background task with live progress, then checks the diff and runs your tests before it reports back. Ask "what models can antigravity use?" for the list. See [docs/ANTIGRAVITY.md](docs/ANTIGRAVITY.md).
 
 ## Security notes
 
 - Install only from the official sources listed in [docs/SETUP.md](docs/SETUP.md). A Reddit thread warned about fake Headroom downloads; **extraheadroom.com** and **gglucass/headroom-desktop** are third-party and not used here.
-- Telemetry is turned off where the tools offer it (`HEADROOM_BEACON=off`, `DO_NOT_TRACK=1`).
+- Telemetry is turned off through each tool's own switch (`HEADROOM_BEACON=off`, `CAVEMAN_TELEMETRY=0`).
+- **Never set `DO_NOT_TRACK`, `DISABLE_TELEMETRY` or `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`** in settings `env`, a shell profile or the system environment. They turn off Claude Code feature flags and break Remote Control.
 - context-mode is licensed **ELv2** (Elastic License 2.0), not OSI open source — fine for personal use; check before redistributing.
 
 ## License

@@ -16,7 +16,9 @@ param(
   [switch]$SkipPlugins,    # caveman + context-mode
   [switch]$SkipCodeburn,
   [switch]$ForceEnv,       # overwrite env values you already set in settings.json
-  [switch]$NoTests
+  [switch]$NoTests,
+  [switch]$Antigravity,    # optional: Antigravity CLI (agy) in WSL + the `antigravity` delegation skill
+  [string]$WslDistro = 'Ubuntu'
 )
 $ErrorActionPreference = 'Stop'
 $Repo   = $PSScriptRoot
@@ -99,7 +101,7 @@ if (-not $SkipCodeburn) {
 
 # ---------------------------------------------------------------- files
 Step 'Hooks, CLAUDE.md, rules, skill, command'
-Copy-Item "$Repo\hooks\tokenstack\*" (New-Item -ItemType Directory -Force "$Claude\hooks\tokenstack").FullName -Force
+Copy-Item "$Repo\hooks\tokenstack\*" (New-Item -ItemType Directory -Force "$Claude\hooks\tokenstack").FullName -Recurse -Force
 function Install-Template($src, $dst, [switch]$KeepExisting) {
   $text = [IO.File]::ReadAllText($src) -replace '\{\{HOME\}\}', $HomeFwd
   if ($KeepExisting -and (Test-Path $dst)) { Warn "$dst exists - left untouched"; return $false }
@@ -139,12 +141,41 @@ Step 'Baseline existing skills (only NEW/CHANGED skills will be flagged for inta
 node "$Claude\hooks\tokenstack\ts.js" skill-register --baseline-all 'pre-existing at stack install' | Measure-Object -Line | ForEach-Object { Ok "$($_.Lines) skills baselined" }
 node "$Claude\hooks\tokenstack\ts.js" skill-register "$Claude\skills\skill-intake\SKILL.md" 'stack skill' | Out-Null
 
+# ---------------------------------------------------------------- Antigravity (optional)
+if ($Antigravity) {
+  Step "Antigravity CLI (agy) in WSL '$WslDistro'"
+  # Native Windows `agy -p` hangs in print mode, so agy runs inside WSL. Official installer only:
+  # https://antigravity.google/cli/install.sh (downloads a sha512-verified binary into ~/.local/bin, no sudo).
+  $distros = (wsl.exe -l -q) -replace "`0", '' | Where-Object { $_.Trim() }
+  if ($distros -notcontains $WslDistro) { Warn "WSL distro '$WslDistro' not found. Install it: wsl --install -d $WslDistro  (then re-run with -Antigravity)" }
+  else {
+    $has = (wsl.exe -d $WslDistro -- bash -lc 'command -v agy || true' | Out-String).Trim()
+    if (-not $has) {
+      $inst = Join-Path $env:TEMP 'agy-install.sh'
+      Invoke-WebRequest -UseBasicParsing 'https://antigravity.google/cli/install.sh' -OutFile $inst
+      Ok "downloaded installer: $inst  sha256 $((Get-FileHash $inst -Algorithm SHA256).Hash)"
+      Warn 'Read the installer before running it. It should only fetch from Google-hosted URLs into ~/.local/bin.'
+      if ((Read-Host '    Run it inside WSL now? [y/N]') -match '^[yY]') {
+        $wslPath = (wsl.exe -d $WslDistro -- wslpath -a ($inst -replace '\\','/')).Trim()
+        wsl.exe -d $WslDistro --cd ~ -- bash $wslPath
+      } else { Warn 'skipped agy install' }
+    }
+    Ok ((wsl.exe -d $WslDistro -- bash -lc 'agy --version 2>/dev/null || echo agy-not-installed' | Out-String).Trim())
+  }
+  Install-Template "$Repo\claude\skills\antigravity\SKILL.md" "$Claude\skills\antigravity\SKILL.md" | Out-Null
+  node "$Claude\hooks\tokenstack\ts.js" skill-register "$Claude\skills\antigravity\SKILL.md" 'stack skill' | Out-Null
+  Ok "sign in once (interactive):  wsl -d $WslDistro --cd ~ -- bash -lc agy"
+  Ok "then check:                  node `"$Claude\hooks\tokenstack\agy-run.js`" doctor"
+}
+
 # ---------------------------------------------------------------- tests
 if (-not $NoTests) {
   Step 'Self-tests'
   node "$Repo\tests\hooks.test.js" | Select-String 'FAIL|ALL PASS|FAILURES'
   if (-not $SkipHeadroom) { node "$Repo\tests\compression.test.js" | Select-String 'FAIL|ALL PASS|FAILURES' }
   node "$Repo\tests\router.test.js" | Select-String 'FAIL|ALL PASS|FAILURES'
+  node "$Repo\tests\agy-trigger.test.js" | Select-String 'FAIL|ALL PASS|FAILURES'
+  node "$Repo\tests\agy-resolve.test.js" | Select-String 'FAIL|ALL PASS|FAILURES'
 }
 
 Step 'Done'

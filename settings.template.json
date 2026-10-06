@@ -10,7 +10,7 @@
     "CAVEMAN_DEFAULT_MODE": "lite",
     "HEADROOM_BEACON": "off",
     "HEADROOM_CCR_TTL_SECONDS": "21600",
-    "DO_NOT_TRACK": "1"
+    "CAVEMAN_TELEMETRY": "0"
   },
   "enabledPlugins": {
     "caveman@caveman": true,

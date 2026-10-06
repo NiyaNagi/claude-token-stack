@@ -30,3 +30,16 @@ Every issue below was hit while building and testing this stack.
 - Router decisions: `node ~/.claude/hooks/tokenstack/ts.js agent-report`
 - MCP health: `claude mcp list`; context-mode: `/context-mode:ctx-doctor`
 - Run a hook by hand: `'{"tool_name":"Bash","tool_input":{"command":"git status"},"cwd":"."}' | node ~/.claude/hooks/tokenstack/ts.js shell-gate`
+
+## Antigravity delegation
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `agy -p` hangs forever on Windows | Print mode is broken in the native Windows build (upstream issue #6) | Run agy in WSL (this repo's runner does). |
+| Windows commands run by agy (`npm test` through `cmd.exe`) take ~30 s or hang | Windows processes started from WSL wait on the inherited stdin | Append `< /dev/null`. The runner's prompt tells agy to do this. |
+| The prompt arrives in agy with its quotes missing | PowerShell 5.1 strips embedded double quotes from native command arguments | The runner writes `prompt.txt` and passes `"$(cat prompt.txt)"` inside WSL. Never pass prompts as arguments. |
+| Hook rejects JSON piped from PowerShell | PowerShell adds a UTF-8 BOM | `ts.js` strips the BOM. Use `[IO.File]::WriteAllText` with BOM-less UTF-8 for files you write. |
+| Runner exits 16 for a `Z:\...` project | Mapped network drives are not auto-mounted in WSL | `sudo mkdir -p /mnt/z && sudo mount -t drvfs Z: /mnt/z` |
+| Runner exits 13 | agy is not installed in the distro | `.\install.ps1 -Antigravity` or the official installer inside WSL. |
+| "could not list agy models" | Not signed in | `wsl -d Ubuntu --cd ~ -- bash -lc agy` and sign in once. |
+| `ctx_fetch_and_index`: "Cannot find module 'turndown'" | The context-mode plugin cache was installed without `node_modules`; `npm install` there fails with an `edgesOut` error | `node ~/.claude/hooks/tokenstack/ts.js ctx-heal` (SessionStart runs it automatically). It installs pure-JS dependencies into a temp prefix and copies them in. |

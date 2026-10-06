@@ -27,7 +27,7 @@ const PROJECT_MARKERS = ['.git', 'package.json', 'pyproject.toml', 'requirements
   'pom.xml', 'build.gradle', 'build.gradle.kts', 'composer.json', 'Gemfile', 'deno.json', 'wrangler.toml', 'wrangler.jsonc', 'CMakeLists.txt'];
 
 // ---------- helpers ----------
-const readStdin = () => { try { return JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch { return {}; } };
+const readStdin = () => { try { return JSON.parse(fs.readFileSync(0, 'utf8').replace(/^﻿/, '') || '{}'); } catch { return {}; } };
 const mkdirp = d => { try { fs.mkdirSync(d, { recursive: true }); } catch {} };
 const ageMs = f => { try { return Date.now() - fs.statSync(f).mtimeMs; } catch { return Infinity; } };
 const touch = f => { mkdirp(path.dirname(f)); fs.writeFileSync(f, String(Date.now())); };
@@ -202,9 +202,21 @@ function compress(inp) {
 }
 // UserPromptSubmit: "exact" / "full output" / "raw output" / "no compress" in the prompt disables compression until a prompt without it.
 function promptMode(inp) {
+  const prompt = String(inp.prompt || '');
   const f = path.join(STATE, `exact-${sid(inp)}`);
-  if (/\b(exact|full output|raw output|no ?compress(ion)?|uncompressed)\b/i.test(String(inp.prompt || ''))) touch(f);
+  if (/\b(exact|full output|raw output|no ?compress(ion)?|uncompressed)\b/i.test(prompt)) touch(f);
   else { try { fs.unlinkSync(f); } catch {} }
+  // Antigravity delegation trigger: "use antigravity|google|gemini|agy", "have gemini …", "delegate to antigravity", "via antigravity"
+  const AG = /\b(?:use|using|via|with|through|have|let|ask|delegate (?:this |it )?to|send (?:this |it )?to|hand (?:this |it )?(?:off )?to)\s+(?:the\s+)?(antigravity|agy|google|gemini)\b((?:[^.\n]|\.(?=\d)){0,60})/i;
+  const m = prompt.match(AG);
+  const asksModels = /\b(antigravity|agy)\b[^.\n]{0,40}\bmodels?\b|\bmodels?\b[^.\n]{0,40}\b(antigravity|agy)\b/i.test(prompt);
+  if (!m && !asksModels) return;
+  const fam = /\b(google|gemini)\b/i.test(m ? m[1] : '') ? 'google' : /\b(claude|anthropic|opus|sonnet)\b/i.test(prompt) ? 'claude' : null;
+  const spec = m && (m[2].match(/\b((?:claude |gemini |gpt[- ]?)?(?:opus|sonnet|flash|pro|oss|gpt)(?:[ -]?\d+(?:\.\d+)?)?(?:[ -](?:lo|low|med|medium|hi|high))?|(?:claude|gemini|gpt)-[a-z0-9.-]+)\b/i) || [])[1];
+  const hint = asksModels && !m
+    ? 'User asks which Antigravity models are available: invoke the `antigravity` skill (step 0: agy-run.js models).'
+    : `If the user is asking to delegate this work to Antigravity (not merely mentioning a Google product/API), invoke the \`antigravity\` skill.${spec ? ` Model spec from user: --model "${spec.trim()}".` : fam ? ` Family: --family ${fam}.` : ' No model named: auto-route.'}`;
+  out({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: hint } });
 }
 function appendStat(o) { try { mkdirp(STATE); fs.appendFileSync(path.join(STATE, 'headroom-hook.jsonl'), JSON.stringify(o) + '\n'); } catch {} }
 
@@ -374,8 +386,30 @@ function precompact(inp) {
   if (mj) fs.writeFileSync(hp, `# HANDOFF (model) — ${new Date().toISOString()}\ncwd: ${cwd}\n\n\`\`\`json\n${mj}\n\`\`\`\n`);
 }
 
+// ---------- context-mode dependency self-heal ----------
+// context-mode's plugin cache ships without node_modules on some installs → ctx_fetch_and_index fails
+// ("Cannot find module 'turndown'"). Install its pure-JS deps into a temp prefix and copy them in. Native
+// modules (better-sqlite3 …) are skipped: context-mode already resolves a built copy elsewhere.
+function ctxModeDir() {
+  const base = path.join(CLAUDE, 'plugins', 'cache', 'context-mode', 'context-mode');
+  try { const v = fs.readdirSync(base).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).pop(); return v ? path.join(base, v) : null; } catch { return null; }
+}
+function ctxHealNeeded() { const d = ctxModeDir(); return !!d && !fs.existsSync(path.join(d, 'node_modules', 'turndown-plugin-gfm')); }
+function ctxHeal() {
+  const d = ctxModeDir(); if (!d) return process.stdout.write('context-mode not installed\n');
+  const NATIVE = new Set(['better-sqlite3', 'bindings', 'prebuild-install', 'node-abi', 'file-uri-to-path']);
+  const deps = Object.entries(JSON.parse(fs.readFileSync(path.join(d, 'package.json'), 'utf8')).dependencies || {}).filter(([n]) => !NATIVE.has(n)).map(([n, v]) => `${n}@${v}`);
+  const tmp = path.join(os.tmpdir(), 'ts-ctxheal'); mkdirp(tmp);
+  const r = cp.spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['install', ...deps, '--prefix', tmp, '--no-audit', '--no-fund', '--ignore-scripts'], { encoding: 'utf8', shell: process.platform === 'win32', windowsHide: true, timeout: 300000 });
+  if (r.status !== 0) return process.stdout.write(`npm failed: ${(r.stderr || '').slice(-300)}\n`);
+  const src = path.join(tmp, 'node_modules'), dst = path.join(d, 'node_modules'); mkdirp(dst);
+  for (const m of fs.readdirSync(src)) if (!NATIVE.has(m) && !m.startsWith('.')) fs.cpSync(path.join(src, m), path.join(dst, m), { recursive: true, force: true });
+  process.stdout.write(`context-mode deps healed in ${dst}\n`);
+}
+
 // ---------- SessionStart ----------
 function sessionStart(inp) {
+  if (ctxHealNeeded()) { try { cp.spawn(process.execPath, [__filename, 'ctx-heal'], { detached: true, stdio: 'ignore', windowsHide: true }).unref(); } catch {} }
   const cwd = inp.cwd || process.cwd();
   const src = inp.source || 'startup';
   const parts = [];
@@ -510,6 +544,7 @@ try {
   if (cmd === 'skill-register') skillRegister(args, process.cwd());
   else if (cmd === 'skill-status') process.stdout.write(JSON.stringify(pendingSkills(process.cwd()), null, 1) + '\n');
   else if (cmd === 'agent-report') agentReport();
+  else if (cmd === 'ctx-heal') ctxHeal();
   else if (cmd === 'handoff-path') process.stdout.write(handoffPath(args[0] || process.cwd()) + '\n');
   else {
     const inp = readStdin();
