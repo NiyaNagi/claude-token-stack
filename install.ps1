@@ -176,6 +176,7 @@ if (-not $NoTests) {
   node "$Repo\tests\router.test.js" | Select-String 'FAIL|ALL PASS|FAILURES'
   node "$Repo\tests\agy-trigger.test.js" | Select-String 'FAIL|ALL PASS|FAILURES'
   node "$Repo\tests\agy-resolve.test.js" | Select-String 'FAIL|ALL PASS|FAILURES'
+  node "$Repo\tests\shot-scale.test.js" | Select-String 'FAIL|ALL PASS|FAILURES'
 }
 
 Step 'Done'
