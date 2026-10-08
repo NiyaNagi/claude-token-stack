@@ -13,11 +13,16 @@ const C = [
   [{ description: 'Research Durable Objects alarms', prompt: 'research how DO alarms retry, summarize' }, 'sonnet'],
   [{ description: 'Implement CSV export', prompt: 'implement a CSV export endpoint and tests' }, 'sonnet'],
   [{ description: 'Rename variable', prompt: 'rename userId to accountId in src/util.ts' }, 'haiku'],
+  // ceiling: explicit opus on routine work drops to the class tier; review/hard/critique keep opus
+  [{ description: 'R3 table layout fixes', prompt: 'fix the table layout bugs listed below', model: 'opus' }, 'sonnet'],
+  [{ description: 'Independent part review', prompt: 'review this diff for regressions', model: 'opus' }, '(unchanged)'],
+  [{ description: 'Design critique round 1', prompt: 'critique the card designs', model: 'opus' }, '(unchanged)'],
+  [{ description: 'Redesign play field', prompt: 'redesign the play field layout from scratch', model: 'opus' }, '(unchanged)'],
   [{ description: 'Find usages', prompt: 'find all usages of parseConfig and list the files' }, 'sonnet'], // lookups/counts: sonnet (haiku miscounted in live test)
   [{ description: 'Quick thing', prompt: 'hello there' }, 'sonnet'],
   [{ description: 'Design plan', prompt: 'plan the work', subagent_type: 'Plan' }, 'opus'],
   [{ description: 'Audit deps', prompt: 'security audit', model: 'haiku' }, 'opus'],
-  [{ description: 'Summarize', prompt: 'summarize README', model: 'opus' }, '(unchanged)'],
+  [{ description: 'Summarize', prompt: 'summarize README', model: 'opus' }, 'sonnet'], // ceiling: routine research with explicit opus
   [{ description: 'Locate thing', prompt: 'where is the retry logic', subagent_type: 'caveman:cavecrew-investigator' }, '(unchanged)'],
   [{ description: 'Review diff', prompt: 'review this PR for race conditions', subagent_type: 'caveman:cavecrew-reviewer' }, 'opus'],
 ];

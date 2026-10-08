@@ -147,3 +147,7 @@ Top-level keys in `settings.template.json`. The merger adds each one only when y
 | `advisorModel` | `opus` | [Advisor tool](https://code.claude.com/docs/en/advisor): Claude consults Opus at decision points. It is ignored when the main model outranks it (for example Fable). Advisor calls re-read the whole session at Opus rates and count toward your plan limits. CLAUDE.md limits calls to three checkpoints: before locking a multi-file plan, after the same error fails twice, and before declaring done or committing. Turn off with `/advisor off`. |
 
 Subagent models are still chosen per task by the `agent-route` hook (Opus for reviews and architecture, Sonnet for build and lookup, Haiku for trivially checkable edits). A blanket "all subagents on Haiku" setting is not used because the router found Haiku unreliable for counts and lists.
+
+### Router ceiling (`capExplicit`)
+
+`model-routing.json` → `capExplicit: { enabled, keepPattern }`. When the main session passes `model: "opus"` (or fable) for a task the router classes as build, research or mechanical, the router lowers it to that class's tier (normally Sonnet). It keeps the explicit model when the task text matches `keepPattern` (hard, complex, redesign, critique, …) or when the same task already ran on a lower tier in the last hour (an escalation). Deep tasks are never lowered. Added after usage analysis showed 76% of explicit-Opus subagents were routine build/research work, and subagents were about 90% of total spend. Set `enabled: false` to restore "explicit always wins".

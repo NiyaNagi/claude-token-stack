@@ -32,6 +32,7 @@ Model routing (hook fills `model` if you omit it; pass it yourself when you know
 | rename, reformat, typo — output trivially checkable | haiku |
 | hardest open-ended reasoning where opus already failed | fable (explicit only) |
 Escalate, don't patch: if a subagent result is uncertain, incomplete, or contradicts evidence on anything that matters, re-run the same task one tier up (router logs this and auto-promotes classes that escalate often). Verify haiku/sonnet counts and lists before relying on them.
+Workflow `agent()` calls bypass the router: always pass `model` per this table (default sonnet). Router caps explicit opus on routine build/research to sonnet unless the task is hard or an escalation re-run.
 "use antigravity / google / gemini" → `antigravity` skill (agy in WSL, background task, verify after).
 
 ## Advisor (Opus on call; main = Sonnet)

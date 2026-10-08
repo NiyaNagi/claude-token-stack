@@ -448,6 +448,7 @@ const DEFAULT_ROUTING = {
   fallbackTier: 'sonnet',
   builtinTypes: ['general-purpose', 'claude', ''],
   promote: { rate: 0.25, minSamples: 8 },
+  capExplicit: { enabled: true, keepPattern: '\\b(opus|hard|complex|difficult|from scratch|redesign|re-?architect|novel|critique|feasibility)' },
 };
 function loadRouting() {
   try { return JSON.parse(fs.readFileSync(ROUTING, 'utf8').replace(/^﻿/, '')); }
@@ -488,8 +489,14 @@ function agentRoute(inp) {
   const custom = !R.builtinTypes.includes(type) && type !== 'Plan';
   let chosen = explicit;
   let why;
+  const cap = R.capExplicit ?? DEFAULT_ROUTING.capExplicit;
   if (explicit) {
     if (cls === 'deep' && tierIdx(explicit) < 2) { chosen = 'opus'; why = `floor: deep task raised ${explicit}->opus`; }
+    // ceiling: explicit opus/fable on routine classes drops to the class tier, unless the task looks hard or this is an escalation re-run
+    else if (cap && cap.enabled && cls && cls !== 'deep' && tierIdx(explicit) >= 2 && tierIdx(explicit) > tierIdx(tier)
+      && !new RegExp(cap.keepPattern, 'i').test(text) && !sameTask.some(r => tierIdx(r.model) < tierIdx(explicit))) {
+      chosen = tier; why = `ceiling: ${cls} task lowered ${explicit}->${tier}`;
+    }
     else why = 'explicit';
   } else if (custom && cls !== 'deep') {
     chosen = null; why = `custom agent ${type}: own frontmatter model`;
