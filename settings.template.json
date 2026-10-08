@@ -1,4 +1,7 @@
 {
+  "model": "sonnet",
+  "effortLevel": "high",
+  "advisorModel": "opus",
   "env": {
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
     "BASH_MAX_OUTPUT_LENGTH": "20000",
@@ -17,29 +20,126 @@
     "context-mode@context-mode": true
   },
   "extraKnownMarketplaces": {
-    "caveman": { "source": { "source": "github", "repo": "JuliusBrussee/caveman" } },
-    "context-mode": { "source": { "source": "github", "repo": "mksglu/context-mode" } }
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "context-mode": {
+      "source": {
+        "source": "github",
+        "repo": "mksglu/context-mode"
+      }
+    }
   },
   "hooks": {
     "PreToolUse": [
-      { "matcher": "Agent|Task", "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" agent-route", "timeout": 5 } ] },
-      { "matcher": "Read|Grep", "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" cbm-gate", "timeout": 10 } ] },
-      { "matcher": "Bash|PowerShell", "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" shell-gate", "timeout": 10 } ] }
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" agent-route",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" cbm-gate",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" shell-gate",
+            "timeout": 10
+          }
+        ]
+      }
     ],
     "PostToolUse": [
-      { "matcher": "mcp__cbm__.*", "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" cbm-mark", "timeout": 5 } ] },
-      { "matcher": "Bash|PowerShell", "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" compress", "timeout": 30 } ] },
-      { "matcher": "Agent|Task", "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" agent-log", "timeout": 5 } ] },
-      { "matcher": "Write|Edit", "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" skill-watch", "timeout": 5 } ] }
+      {
+        "matcher": "mcp__cbm__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" cbm-mark",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" compress",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" agent-log",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" skill-watch",
+            "timeout": 5
+          }
+        ]
+      }
     ],
     "UserPromptSubmit": [
-      { "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" prompt-mode", "timeout": 5 } ] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" prompt-mode",
+            "timeout": 5
+          }
+        ]
+      }
     ],
     "PreCompact": [
-      { "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" precompact", "timeout": 100 } ] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" precompact",
+            "timeout": 100
+          }
+        ]
+      }
     ],
     "SessionStart": [
-      { "hooks": [ { "type": "command", "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" session-start", "timeout": 15 } ] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" session-start",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }

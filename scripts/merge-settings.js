@@ -24,6 +24,8 @@ for (const [k, v] of Object.entries(tpl.env || {})) {
   if (!(k in cur.env)) { cur.env[k] = v; log.push(`env +${k}=${v}`); }
   else if (cur.env[k] !== v) { if (flag('--force-env')) { log.push(`env ~${k}: ${cur.env[k]} -> ${v}`); cur.env[k] = v; } else log.push(`env =${k} kept your value (${cur.env[k]}); template suggests ${v}`); }
 }
+// Top-level model keys: only set when absent (your model choice always wins).
+for (const k of ['model', 'effortLevel', 'advisorModel']) if (k in tpl && !(k in cur)) { cur[k] = tpl[k]; log.push(`+${k}=${tpl[k]}`); }
 for (const key of ['enabledPlugins', 'extraKnownMarketplaces']) {
   cur[key] = cur[key] || {};
   for (const [k, v] of Object.entries(tpl[key] || {})) if (!(k in cur[key])) { cur[key][k] = v; log.push(`${key} +${k}`); }

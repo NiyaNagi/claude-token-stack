@@ -34,6 +34,9 @@ Model routing (hook fills `model` if you omit it; pass it yourself when you know
 Escalate, don't patch: if a subagent result is uncertain, incomplete, or contradicts evidence on anything that matters, re-run the same task one tier up (router logs this and auto-promotes classes that escalate often). Verify haiku/sonnet counts and lists before relying on them.
 "use antigravity / google / gemini" → `antigravity` skill (agy in WSL, background task, verify after).
 
+## Advisor (Opus on call; main = Sonnet)
+Call `advisor` only at: (1) before locking a multi-file plan (auth invariants, schema/API contracts); (2) same test/compile error fails twice — root cause or rabbit hole?; (3) before declaring done or committing — full-diff regression check. Never for routine bash, reads, or single-file edits: each call re-reads the whole session at Opus rates.
+
 ## Skills
 New/changed skills → run `skill-intake` before use (SessionStart hook lists pending).
 

@@ -135,3 +135,15 @@ The `antigravity` section of `~/.claude/tokenstack/model-routing.json` controls 
 Environment: `AGR_MODELS_FILE` (tests only) replaces the live `agy models` list with a JSON fixture. Model list cache: `~/.claude/tokenstack/agy-models.json` (24 h; `agy-run.js models --refresh`). Jobs: `~/.claude/tokenstack/agy-jobs/`.
 
 Runner commands are listed in [ANTIGRAVITY.md](ANTIGRAVITY.md#runner-commands).
+
+## Models and advisor
+
+Top-level keys in `settings.template.json`. The merger adds each one only when your `settings.json` does not already have it.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `model` | `sonnet` | Main session model. Sonnet builds; switch a single session to Opus or Fable from the model picker when needed. |
+| `effortLevel` | `high` | Effort for the main session. |
+| `advisorModel` | `opus` | [Advisor tool](https://code.claude.com/docs/en/advisor): Claude consults Opus at decision points. It is ignored when the main model outranks it (for example Fable). Advisor calls re-read the whole session at Opus rates and count toward your plan limits. CLAUDE.md limits calls to three checkpoints: before locking a multi-file plan, after the same error fails twice, and before declaring done or committing. Turn off with `/advisor off`. |
+
+Subagent models are still chosen per task by the `agent-route` hook (Opus for reviews and architecture, Sonnet for build and lookup, Haiku for trivially checkable edits). A blanket "all subagents on Haiku" setting is not used because the router found Haiku unreliable for counts and lists.
