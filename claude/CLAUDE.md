@@ -34,6 +34,8 @@ Model routing (hook fills `model` if you omit it; pass it yourself when you know
 Escalate, don't patch: if a subagent result is uncertain, incomplete, or contradicts evidence on anything that matters, re-run the same task one tier up (router logs this and auto-promotes classes that escalate often). Verify haiku/sonnet counts and lists before relying on them.
 Workflow `agent()` calls bypass the router: always pass `model` per this table (default sonnet). Router caps explicit opus on routine build/research to sonnet unless the task is hard or an escalation re-run.
 "use antigravity / google / gemini" → `antigravity` skill (agy in WSL, background task, verify after).
+Routine build/fix subtask with explicit acceptance tests, clean git tree → prefer `antigravity` skill (auto-routes to Flash, uses Google quota) over a Claude subagent; verify after. Not for review, design, security, or when the user says Claude only.
+Visual QA: text first (`get_page_text`/`read_page`); screenshots auto-scale 0.5 (hook), `zoom` only the region in question. Subagents return text verdicts, never images.
 
 ## Advisor (Opus on call; main = Sonnet)
 Call `advisor` only at: (1) before locking a multi-file plan (auth invariants, schema/API contracts); (2) same test/compile error fails twice — root cause or rabbit hole?; (3) before declaring done or committing — full-diff regression check. Never for routine bash, reads, or single-file edits: each call re-reads the whole session at Opus rates.

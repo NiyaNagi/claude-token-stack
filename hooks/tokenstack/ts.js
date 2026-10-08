@@ -514,9 +514,30 @@ function agentRoute(inp) {
   const id = inp.tool_use_id || `${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   try { mkdirp(STATE); fs.appendFileSync(AGENT_LOG, JSON.stringify({ phase: 'pre', id, t: now, sid: sid(inp), cls, type, model: chosen || 'agent-default', why, desc: String(ti.description || '').slice(0, 100), w: [...w].slice(0, 60) }) + '\n'); } catch {}
   try { fs.writeFileSync(path.join(STATE, `agent-pending-${sid(inp)}`), id); } catch {}
-  if (chosen && chosen !== explicit) {
-    out({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecisionReason: `model router: ${why}`, updatedInput: { ...ti, model: chosen } } });
+  // scope contract: subagents are billed per call on their whole context, so keep them short-lived and text-only
+  const addContract = R.contract !== false && ti.prompt && !String(ti.prompt).includes(CONTRACT_MARK);
+  if ((chosen && chosen !== explicit) || addContract) {
+    const upd = { ...ti };
+    if (chosen && chosen !== explicit) upd.model = chosen;
+    if (addContract) upd.prompt = `${ti.prompt}\n\n${CONTRACT}`;
+    out({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecisionReason: `model router: ${why}`, updatedInput: upd } });
   }
+}
+const CONTRACT_MARK = '[tokenstack scope]';
+const CONTRACT = `${CONTRACT_MARK} One purpose only; stop when done. Return a text verdict (<200 words), never images. Screenshots: get_page_text/read_page first; if visual, scale 0.5 and zoom only the region in question. Don't re-read files you already read.`;
+
+// PreToolUse browser screenshots: default to half scale (~1/4 the image tokens) unless the caller set one. zoom is left alone.
+function shotScale(inp) {
+  const s = Number(process.env.TS_SHOT_SCALE || 0.5);
+  const ti = inp.tool_input || {};
+  let upd = null;
+  if (/__computer$/.test(inp.tool_name || '') && ti.action === 'screenshot' && ti.scale == null) upd = { ...ti, scale: s };
+  else if (/__browser_batch$/.test(inp.tool_name || '') && Array.isArray(ti.actions)) {
+    let n = 0;
+    const actions = ti.actions.map(a => (a && a.name === 'computer' && a.input && a.input.action === 'screenshot' && a.input.scale == null ? (n++, { ...a, input: { ...a.input, scale: s } }) : a));
+    if (n) upd = { ...ti, actions };
+  }
+  if (upd) out({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecisionReason: `screenshot scale ${s}`, updatedInput: upd } });
 }
 function agentLog(inp) {
   const r = inp.tool_response || {};
@@ -556,7 +577,7 @@ try {
   else {
     const inp = readStdin();
     ({ 'cbm-gate': cbmGate, 'cbm-mark': cbmMark, 'shell-gate': shellGate, compress, 'skill-watch': skillWatch,
-       'session-start': sessionStart, precompact, 'prompt-mode': promptMode, 'agent-route': agentRoute, 'agent-log': agentLog }[cmd] || (() => {}))(inp);
+       'session-start': sessionStart, precompact, 'prompt-mode': promptMode, 'agent-route': agentRoute, 'agent-log': agentLog, 'shot-scale': shotScale }[cmd] || (() => {}))(inp);
   }
 } catch (e) {
   try { mkdirp(STATE); fs.appendFileSync(path.join(STATE, 'errors.log'), `${new Date().toISOString()} ${cmd} ${e && e.stack}\n`); } catch {}

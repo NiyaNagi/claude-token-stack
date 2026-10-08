@@ -6,7 +6,7 @@ fs.mkdirSync(path.dirname(LOG), { recursive: true });
 const backup = fs.existsSync(LOG) ? fs.readFileSync(LOG, 'utf8') : null;
 fs.writeFileSync(LOG, '');
 const SID = 'rt-' + Date.now();
-const route = ti => { const r = cp.spawnSync('node', [TS, 'agent-route'], { input: JSON.stringify({ session_id: SID, tool_name: 'Agent', tool_input: ti }), encoding: 'utf8' }); try { return JSON.parse(r.stdout).hookSpecificOutput.updatedInput.model; } catch { return '(unchanged)'; } };
+const route = ti => { const r = cp.spawnSync('node', [TS, 'agent-route'], { input: JSON.stringify({ session_id: SID, tool_name: 'Agent', tool_input: ti }), encoding: 'utf8' }); try { const m = JSON.parse(r.stdout).hookSpecificOutput.updatedInput.model; return m && m !== ti.model ? m : '(unchanged)'; } catch { return '(unchanged)'; } };
 const C = [
   [{ description: 'Security audit of auth module', prompt: 'Audit src/auth for vulnerabilities', subagent_type: 'general-purpose' }, 'opus'],
   [{ description: 'Refactor billing across files', prompt: 'refactor the billing service into modules' }, 'opus'],

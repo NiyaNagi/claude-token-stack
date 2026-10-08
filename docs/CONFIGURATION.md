@@ -151,3 +151,13 @@ Subagent models are still chosen per task by the `agent-route` hook (Opus for re
 ### Router ceiling (`capExplicit`)
 
 `model-routing.json` → `capExplicit: { enabled, keepPattern }`. When the main session passes `model: "opus"` (or fable) for a task the router classes as build, research or mechanical, the router lowers it to that class's tier (normally Sonnet). It keeps the explicit model when the task text matches `keepPattern` (hard, complex, redesign, critique, …) or when the same task already ran on a lower tier in the last hour (an escalation). Deep tasks are never lowered. Added after usage analysis showed 76% of explicit-Opus subagents were routine build/research work, and subagents were about 90% of total spend. Set `enabled: false` to restore "explicit always wins".
+
+### Usage-driven defaults (added after the 2026-10 usage analysis)
+
+| Mechanism | Where | What it does | Turn off |
+|---|---|---|---|
+| Subagent scope contract | `agent-route` hook | Appends a one-line `[tokenstack scope]` contract to every subagent prompt: one purpose, text verdict under 200 words, no images, text-first page reading, no re-reads. Subagents were ~90% of spend at ~233k context per call. | `"contract": false` in `model-routing.json` |
+| Screenshot scale | `shot-scale` hook on `mcp__Claude_Browser__computer` and `browser_batch` | Sets `scale: 0.5` on screenshots that have no scale (about a quarter of the image tokens). Explicit scales and `zoom` are untouched. | `TS_SHOT_SCALE=1` in settings `env` |
+| Antigravity offload | CLAUDE.md | Routine build/fix subtasks with acceptance tests on a clean tree go to the `antigravity` skill (Flash, Google quota) instead of a Claude subagent, then get verified. | Remove the line, or say "Claude only" |
+
+Codeburn's auto-fixes were reviewed and not applied: archiving "unused" skills would break the stack gates in `rules/stacks.md`, and the total estimated saving was under $0.01. The MCP servers it flags are app-managed or connector tools that load deferred.

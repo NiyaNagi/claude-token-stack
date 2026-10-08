@@ -64,6 +64,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__Claude_Browser__computer|mcp__Claude_Browser__browser_batch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"{{HOME}}/.claude/hooks/tokenstack/ts.js\" shot-scale",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [
